@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Levi Dev - Mural de Histórias</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @keyframes breath-blue {
+            0% { box-shadow: 0 0 10px rgba(137, 207, 240, 0.2); border-color: rgba(137, 207, 240, 0.2); }
+            50% { box-shadow: 0 0 35px rgba(0, 255, 255, 0.5); border-color: rgba(0, 255, 255, 0.8); }
+            100% { box-shadow: 0 0 10px rgba(137, 207, 240, 0.2); border-color: rgba(137, 207, 240, 0.2); }
+        }
+        body { background: #02050a; color: white; font-family: 'Rajdhani', sans-serif; min-height: 100vh; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 600px; margin-bottom: 30px; border-bottom: 2px solid #89CFF0; padding-bottom: 15px; }
+        .logo { font-family: 'Orbitron', sans-serif; color: #89CFF0; font-size: 24px; text-shadow: 0 0 10px #89CFF0; }
+        #btnStatus { background: transparent; border: 1px solid #89CFF0; color: #89CFF0; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-family: 'Orbitron'; font-size: 11px; }
+
+        /* PAINEL ADM */
+        #adminPanel { display: none; width: 100%; max-width: 500px; background: #0a0f19; border: 1px dashed #89CFF0; border-radius: 15px; padding: 20px; margin-bottom: 25px; }
+        .stat-card { background: #050a14; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #1e293b; }
+        .order-item { font-size: 13px; border-bottom: 1px solid #1e293b; padding: 10px 0; color: #89CFF0; }
+        
+        .container { width: 100%; max-width: 500px; }
+        .product-card { background: rgba(10, 15, 25, 0.95); border: 2px solid #1a1a1a; border-radius: 20px; padding: 30px; animation: breath-blue 5s infinite ease-in-out; text-align: center; }
+        .photo-box { width: 100%; background: #000; border-radius: 15px; margin-bottom: 20px; overflow: hidden; border: 1px solid #1e293b; min-height: 200px; }
+        .photo-box img { width: 100%; height: auto; display: block; }
+
+        h2 { font-family: 'Orbitron', sans-serif; margin-bottom: 10px; color: #fff; }
+        .product-desc { color: #94a3b8; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+
+        .configurator { background: #050a14; padding: 20px; border-radius: 12px; border: 1px solid #1e293b; margin-bottom: 25px; text-align: left; }
+        .option { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        input[type="number"] { width: 50px; background: #000; border: 1px solid #89CFF0; color: white; padding: 5px; border-radius: 5px; text-align: center; }
+        .total-price { color: #00ffff; font-size: 28px; font-weight: bold; }
+        .btn-cart { width: 100%; padding: 18px; background: #25d366; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(8px); }
+        .auth-box { background: #050a14; padding: 40px; border-radius: 20px; width: 320px; border: 2px solid #89CFF0; text-align: center; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid #1e293b; border-radius: 5px; color: white; }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop hidden><source src="alianca.mp3" type="audio/mpeg"></audio>
+
+    <header>
+        <div class="logo">Levi Dev</div>
+        <button id="btnStatus" onclick="abrirModal()">LOGIN</button>
+    </header>
+
+    <div id="adminPanel">
+        <h3 style="color:#89CFF0; font-family:'Orbitron'; font-size:14px;"> Levi's Dashboard</h3>
+        <div class="stat-card">
+            <p style="font-size: 14px; font-weight: bold;">📦 Pedidos:</p>
+            <div id="orderHistory"></div>
+        </div>
+        <div class="stat-card">
+            <p style="font-size: 14px; font-weight: bold;">👥 Clientes:</p>
+            <ul id="userList" style="list-style: none;"></ul>
+        </div>
+        <button onclick="location.reload()" style="margin-top:10px; color:#ff4d6d; background:none; border:none; cursor:pointer;">Sair</button>
+    </div>
+
+    <div class="container">
+        <div class="product-card">
+            <div class="photo-box">
+                <img src="mural.png" alt="Mural de Histórias">
+            </div>
+
+            <h2>Mural de Histórias</h2>
+            <p class="product-desc">
+                Eternize seus momentos com 4 fotos interativas, frase personalizada e um calendário exclusivo com suas 10 datas mais importantes.
+            </p>
+
+            <div class="configurator">
+                <label class="option"><span>Música (+ R$ 2,50)</span><input type="checkbox" id="add-music" onchange="atualizarTotal()"></label>
+                <div class="option"><span>Fotos Extras (+2)</span><input type="number" id="qty-photos" min="0" max="3" value="0" onchange="atualizarTotal()"></div>
+                <div style="text-align: right; border-top: 1px solid #1e293b; padding-top: 10px;">
+                    <span class="total-price" id="display-total">R$ 19,99</span>
+                </div>
+            </div>
+            <button class="btn-cart" onclick="finalizarPedido()">ENVIAR PEDIDO</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalAuth">
+        <div class="auth-box">
+            <h2 id="modalTitle" style="color:#89CFF0; margin-bottom:20px;">ACESSO</h2>
+            <div id="login-fields">
+                <input type="text" id="user-login" placeholder="USUÁRIO">
+                <input type="password" id="pass-login" placeholder="SENHA">
+                <button style="width:100%; padding:12px; background:#89CFF0; border:none; font-weight:bold;" onclick="fazerLogin()">ENTRAR</button>
+                <p style="margin-top:15px; color:#64748b; cursor:pointer;" onclick="alternarAuth(true)">Criar conta</p>
+            </div>
+            <div id="cad-fields" style="display: none;">
+                <input type="text" id="user-cad" placeholder="NOVO USUÁRIO">
+                <input type="password" id="pass-cad" placeholder="CRIAR SENHA">
+                <button style="width:100%; padding:12px; background:#89CFF0; border:none; font-weight:bold;" onclick="cadastrar()">CADASTRAR</button>
+                <p style="margin-top:15px; color:#64748b; cursor:pointer;" onclick="alternarAuth(false)">Voltar</p>
+            </div>
+            <button onclick="fecharModal()" style="margin-top:15px; background:none; border:none; color:#ff4d6d; cursor:pointer;">FECHAR</button>
+        </div>
+    </div>
+
+    <script>
+        let logado = false;
+        let usuarioAtual = "";
+        let pedidos = JSON.parse(localStorage.getItem('historico_pedidos')) || [];
+
+        document.addEventListener('click', () => { document.getElementById('bgMusic').play().catch(()=>{}); }, { once: true });
+
+        function abrirModal() { document.getElementById('modalAuth').style.display = 'flex'; }
+        function fecharModal() { document.getElementById('modalAuth').style.display = 'none'; }
+        function alternarAuth(m) { document.getElementById('login-fields').style.display = m ? 'none' : 'block'; document.getElementById('cad-fields').style.display = m ? 'block' : 'none'; }
+
+        function fazerLogin() {
+            const u = document.getElementById('user-login').value.trim();
+            const p = document.getElementById('pass-login').value.trim();
+            if (u === "Levizxkk7" && p === "080226") {
+                logado = true; usuarioAtual = "ADM";
+                document.getElementById('btnStatus').innerText = "ADM";
+                document.getElementById('adminPanel').style.display = 'block';
+                carregarDadosAdm(); fecharModal(); return;
+            }
+            const salvo = localStorage.getItem(u);
+            if(salvo === p) { logado = true; usuarioAtual = u; document.getElementById('btnStatus').innerText = u.toUpperCase(); fecharModal(); } 
+            else { alert("Erro!"); }
+        }
+
+        function cadastrar() {
+            const u = document.getElementById('user-cad').value.trim();
+            const p = document.getElementById('pass-cad').value.trim();
+            if(u && p) { localStorage.setItem(u, p); alert("Cadastrado!"); alternarAuth(false); }
+        }
+
+        function carregarDadosAdm() {
+            const lista = document.getElementById('userList');
+            lista.innerHTML = "";
+            for (let i = 0; i < localStorage.length; i++) {
+                let chave = localStorage.key(i);
+                if (chave !== 'historico_pedidos' && chave !== 'Levizxkk7') {
+                    let li = document.createElement('li');
+                    li.innerHTML = `👤 ${chave} | 🔑: ${localStorage.getItem(chave)}`;
+                    lista.appendChild(li);
+                }
+            }
+            const hist = document.getElementById('orderHistory');
+            hist.innerHTML = pedidos.length ? "" : "Sem pedidos.";
+            pedidos.forEach(p => {
+                let div = document.createElement('div');
+                div.className = "order-item";
+                div.innerHTML = `<strong>${p.user}</strong>: R$ ${p.valor} (${p.data})`;
+                hist.prepend(div);
+            });
+        }
+
+        function atualizarTotal() {
+            let t = 19.99;
+            if(document.getElementById('add-music').checked) t += 2.5;
+            let q = parseInt(document.getElementById('qty-photos').value) || 0;
+            t += (q * 1.5);
+            document.getElementById('display-total').innerText = `R$ ${t.toFixed(2).replace('.', ',')}`;
+            return { t, q };
+        }
+
+        function finalizarPedido() {
+            if(!logado) { abrirModal(); return; }
+            const info = atualizarTotal();
+            const novoPedido = { user: usuarioAtual, valor: info.t.toFixed(2), data: new Date().toLocaleDateString('pt-BR') };
+            pedidos.push(novoPedido);
+            localStorage.setItem('historico_pedidos', JSON.stringify(pedidos));
+            window.open(`https://api.whatsapp.com/send?phone=5582987582181&text=Quero o Mural! Total: R$ ${info.t.toFixed(2)}`);
+            if(usuarioAtual === "ADM") carregarDadosAdm();
+        }
+    </script>
+</body>
+</html>
